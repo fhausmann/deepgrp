@@ -89,3 +89,10 @@ Requirements are listed in `pyproject.toml`__.
 .. __: https://github.com/fhausmann/deepgrp/blob/master/pyproject.toml
 
 Additionally for compiling C/Cython code, a C compiler should be installed.
+
+Further information
+===================
+The DeepGRP paper is currently under review. You can find material to reproduce
+the results in the repository `deepgrp_reproducibility`__.
+
+.. __: https://github.com/fhausmann/deepgrp_reproducibility
