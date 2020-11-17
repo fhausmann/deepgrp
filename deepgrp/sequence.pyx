@@ -58,6 +58,24 @@ def one_hot_encode_dna_sequence(sequence: str):
     return _one_hot_encode_dna_sequence(byte)
 
 
+cdef extern from "maxcalc.h":
+    float *_get_max(float *output, float *inputs, size_t dim0, size_t dim1,
+               size_t stride, size_t batchsize)
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+def get_max(np.ndarray[np.float32_t, ndim=2, mode = 'c'] output,
+               np.ndarray[np.float32_t, ndim=3, mode = 'c'] inputs,
+               int stride):
+    cdef float* in_buff = <float*> inputs.data
+    cdef float* out_buff = <float*> output.data
+    cdef unsigned int batchsize = inputs.shape[0]
+    cdef unsigned int dim0  = inputs.shape[1]
+    cdef unsigned int dim1  = inputs.shape[2]
+    _get_max(out_buff, in_buff, dim0, dim1, stride, batchsize)
+    return output
+
+
 def yield_segments(classes: np.array, start_offset: int):
     """Converts numpy array of classes to Iterator over continuous segments."""
     i = 0

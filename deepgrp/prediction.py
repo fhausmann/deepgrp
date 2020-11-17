@@ -8,6 +8,7 @@ from tensorflow import keras
 # pytype: disable=import-error
 # pylint: disable=import-error
 from deepgrp.mss import find_mss_labels  # pylint: disable=no-name-in-module
+from deepgrp.sequence import get_max_np
 # pytype: enable=import-error
 # pylint: enable=import-error
 from deepgrp.model import create_model, Options
@@ -28,11 +29,13 @@ def fetch_validation_batch(data: np.ndarray, step_size: int, batch_size: int,
         tf.data.Dataset: Dataset with input data adjusted for batch.
 
     """
-    def _fetch_data():
-        for index in range(0, data.shape[1] - vecsize, step_size):
-            yield data[:, index:index + vecsize].T.astype('float32')
+    data = data.T
 
-    shape = tf.TensorShape([vecsize, data.shape[0]])
+    def _fetch_data():
+        for index in range(0, data.shape[0] - vecsize, step_size):
+            yield data[index:index + vecsize].astype('float32')
+
+    shape = tf.TensorShape([vecsize, data.shape[1]])
     dataset = tf.data.Dataset.from_generator(_fetch_data, tf.float32, shape)
     return dataset.batch(batch_size).prefetch(
         buffer_size=tf.data.experimental.AUTOTUNE)
@@ -102,14 +105,11 @@ def predict(model: keras.Model, data: tf.data.Dataset,
 
     """
     predictions = np.zeros(results_shape, dtype=np.float32)
-    index = 0
-    for batch in data:
+    for i, batch in enumerate(data):
         vecsize = batch.shape[1]
-        for probas in model.predict_on_batch(batch):
-            np.maximum(predictions[index:index + vecsize],
-                       probas,
-                       out=predictions[index:index + vecsize])
-            index += step_size
+        index = (i * batch.shape[0] * step_size)
+        probas = model.predict_on_batch(batch)
+        get_max_np(predictions[index:], probas.numpy(), step_size)
     return predictions
 
 
@@ -166,8 +166,8 @@ def calculate_multiclass_matthews_cc(cnf_matrix: np.ndarray) -> float:
     return cov_ytyp / np.sqrt(cov_ytyt * cov_ypyp)
 
 
-def _calculate_metrics(cnf_matrix: np.ndarray
-                       ) -> Dict[str, Union[np.ndarray, float]]:
+def _calculate_metrics(
+        cnf_matrix: np.ndarray) -> Dict[str, Union[np.ndarray, float]]:
     true_positive = np.diag(cnf_matrix).astype(float)
     false_positive = (cnf_matrix.sum(axis=0) - true_positive).astype(float)
     false_negative = (cnf_matrix.sum(axis=1) - true_positive).astype(float)
@@ -221,7 +221,7 @@ def confusion_matrix(truelbl: np.ndarray,
 
 
 def calculate_metrics(
-        predictions_class: np.ndarray, true_class: np.ndarray
+    predictions_class: np.ndarray, true_class: np.ndarray
 ) -> Tuple[np.ndarray, Dict[str, Union[np.ndarray, float]]]:
     """Calculated important metrics.
 

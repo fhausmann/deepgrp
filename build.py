@@ -8,8 +8,8 @@ _EXTENSIONS = [
               sources=["deepgrp/_mss/pymss.pyx", "./deepgrp/_mss/mss.c"],
               include_dirs=[numpy.get_include()] + ["./deepgrp"]),
     Extension("deepgrp.sequence",
-              sources=["deepgrp/sequence.pyx"],
-              include_dirs=[numpy.get_include()]),
+              sources=["deepgrp/sequence.pyx","deepgrp/maxcalc.c"],
+              include_dirs=[numpy.get_include()] + ["./deepgrp"]),
 ]
 
 
