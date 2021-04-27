@@ -29,5 +29,5 @@ parse_rm = 'deepgrp._scripts.parse_rm:main'
 deepgrp = 'deepgrp.__main__:main'
 
 [build-system]
-requires = ["poetry>=0.12", "Cython", "numpy"]
+requires = ["poetry>=0.12", "Cython", "numpy", "setuptools"]
 build-backend = "poetry.masonry.api"
