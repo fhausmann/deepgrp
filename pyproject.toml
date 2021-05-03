@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "deepgrp"
-version = "0.2.0"
+version = "0.2.1"
 description = "DNA repeat annotations"
 authors = ["Fabian Hausmann <fabian.hausmann@zmnh.uni-hamburg.de>", "Stefan Kurtz <kurtz@zbh.uni-hamburg.de>"]
+license= "Apache-2.0"
+readme = "README.rst"
+repository = "https://github.com/fhausmann/deepgrp"
 
 build = "build.py"
 

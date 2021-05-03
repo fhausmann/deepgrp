@@ -2,6 +2,11 @@
 DeepGRP - Deep learning for Genomic Repetitive element Prediction
 ==================================================================
 
+|PyPI version fury.io|
+
+.. |PyPI version fury.io| image:: https://badge.fury.io/py/deepgrp.svg
+   :target: https://pypi.org/project/deepgrp/
+
 DeepGRP is a python package used to predict genomic repetitive elements
 with a deep learning model consisting of bidirectional gated recurrent units
 with attention.
@@ -19,9 +24,15 @@ Getting Started
 Installation
 ------------
 
-For installation you can use provided wheels with pip::
+For installation you can use the PyPI version with::
 
-    pip install deepgrp-0.1.0-cp37-cp37m-linux_x86_64.whl
+    pip install deepgrp
+
+or install from this repository with::
+
+    git clone https://github.com/fhausmann/deepgrp
+    cd deepgrp
+    pip install .
 
 Additionally you can install the developmental version with `poetry`__::
 
@@ -92,7 +103,7 @@ Additionally for compiling C/Cython code, a C compiler should be installed.
 
 Further information
 ===================
-The DeepGRP paper is currently under review. You can find material to reproduce
+You can find material to reproduce
 the results in the repository `deepgrp_reproducibility`__.
 
 .. __: https://github.com/fhausmann/deepgrp_reproducibility
