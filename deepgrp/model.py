@@ -237,6 +237,7 @@ def _get_dna_encoding() -> List[int]:
     return [v for _, v in sorted(complement.items())]
 
 
+@tf.keras.utils.register_keras_serializable()
 class ReverseComplement(tf.keras.layers.Layer):
     """Calculates reverse complement of the one hot encoded input based on
         dictionary containing complementary indices.

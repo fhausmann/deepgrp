@@ -1,0 +1,563 @@
+{
+    "LSTM": {
+        "name": "model_1",
+        "layers": [
+            {
+                "class_name": "InputLayer",
+                "config": {
+                    "batch_input_shape": [
+                        null,
+                        150,
+                        5
+                    ],
+                    "dtype": "float32",
+                    "sparse": false,
+                    "ragged": false,
+                    "name": "input_2"
+                },
+                "name": "input_2",
+                "inbound_nodes": []
+            },
+            {
+                "class_name": "Custom>ReverseComplement",
+                "config": {
+                    "name": "reverse_complement_1",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "complements": [
+                        3,
+                        2,
+                        1,
+                        0,
+                        4
+                    ]
+                },
+                "name": "reverse_complement_1",
+                "inbound_nodes": [
+                    [
+                        [
+                            "input_2",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "LSTM",
+                "config": {
+                    "name": "BLSTM",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "return_sequences": true,
+                    "return_state": false,
+                    "go_backwards": false,
+                    "stateful": false,
+                    "unroll": false,
+                    "time_major": false,
+                    "units": 32,
+                    "activation": "tanh",
+                    "recurrent_activation": "sigmoid",
+                    "use_bias": true,
+                    "kernel_initializer": {
+                        "class_name": "GlorotUniform",
+                        "config": {
+                            "seed": null
+                        }
+                    },
+                    "recurrent_initializer": {
+                        "class_name": "Orthogonal",
+                        "config": {
+                            "gain": 1.0,
+                            "seed": null
+                        }
+                    },
+                    "bias_initializer": {
+                        "class_name": "Zeros",
+                        "config": {}
+                    },
+                    "unit_forget_bias": true,
+                    "kernel_regularizer": null,
+                    "recurrent_regularizer": null,
+                    "bias_regularizer": null,
+                    "activity_regularizer": null,
+                    "kernel_constraint": null,
+                    "recurrent_constraint": null,
+                    "bias_constraint": null,
+                    "dropout": 0.25,
+                    "recurrent_dropout": 0.0,
+                    "implementation": 2
+                },
+                "name": "BLSTM",
+                "inbound_nodes": [
+                    [
+                        [
+                            "input_2",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ],
+                    [
+                        [
+                            "reverse_complement_1",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Average",
+                "config": {
+                    "name": "average_2",
+                    "trainable": true,
+                    "dtype": "float32"
+                },
+                "name": "average_2",
+                "inbound_nodes": [
+                    [
+                        [
+                            "BLSTM",
+                            0,
+                            0,
+                            {}
+                        ],
+                        [
+                            "BLSTM",
+                            1,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Dense",
+                "config": {
+                    "name": "FF",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "units": 5,
+                    "activation": "linear",
+                    "use_bias": true,
+                    "kernel_initializer": {
+                        "class_name": "GlorotUniform",
+                        "config": {
+                            "seed": null
+                        }
+                    },
+                    "bias_initializer": {
+                        "class_name": "Zeros",
+                        "config": {}
+                    },
+                    "kernel_regularizer": null,
+                    "bias_regularizer": null,
+                    "activity_regularizer": null,
+                    "kernel_constraint": null,
+                    "bias_constraint": null
+                },
+                "name": "FF",
+                "inbound_nodes": [
+                    [
+                        [
+                            "average_2",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Softmax",
+                "config": {
+                    "name": "softmax_1",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "axis": 2
+                },
+                "name": "softmax_1",
+                "inbound_nodes": [
+                    [
+                        [
+                            "FF",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            }
+        ],
+        "input_layers": [
+            [
+                "input_2",
+                0,
+                0
+            ]
+        ],
+        "output_layers": [
+            [
+                "softmax_1",
+                0,
+                0
+            ]
+        ]
+    },
+    "GRU": {
+        "name": "model",
+        "layers": [
+            {
+                "class_name": "InputLayer",
+                "config": {
+                    "batch_input_shape": [
+                        null,
+                        150,
+                        5
+                    ],
+                    "dtype": "float32",
+                    "sparse": false,
+                    "ragged": false,
+                    "name": "input_1"
+                },
+                "name": "input_1",
+                "inbound_nodes": []
+            },
+            {
+                "class_name": "Custom>ReverseComplement",
+                "config": {
+                    "name": "reverse_complement",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "complements": [
+                        3,
+                        2,
+                        1,
+                        0,
+                        4
+                    ]
+                },
+                "name": "reverse_complement",
+                "inbound_nodes": [
+                    [
+                        [
+                            "input_1",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "GRU",
+                "config": {
+                    "name": "BGRU",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "return_sequences": true,
+                    "return_state": true,
+                    "go_backwards": false,
+                    "stateful": false,
+                    "unroll": false,
+                    "time_major": false,
+                    "units": 32,
+                    "activation": "tanh",
+                    "recurrent_activation": "sigmoid",
+                    "use_bias": true,
+                    "kernel_initializer": {
+                        "class_name": "GlorotUniform",
+                        "config": {
+                            "seed": null
+                        }
+                    },
+                    "recurrent_initializer": {
+                        "class_name": "Orthogonal",
+                        "config": {
+                            "gain": 1.0,
+                            "seed": null
+                        }
+                    },
+                    "bias_initializer": {
+                        "class_name": "Zeros",
+                        "config": {}
+                    },
+                    "kernel_regularizer": null,
+                    "recurrent_regularizer": null,
+                    "bias_regularizer": null,
+                    "activity_regularizer": null,
+                    "kernel_constraint": null,
+                    "recurrent_constraint": null,
+                    "bias_constraint": null,
+                    "dropout": 0.25,
+                    "recurrent_dropout": 0.0,
+                    "implementation": 2,
+                    "reset_after": true
+                },
+                "name": "BGRU",
+                "inbound_nodes": [
+                    [
+                        [
+                            "input_1",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ],
+                    [
+                        [
+                            "reverse_complement",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Average",
+                "config": {
+                    "name": "average",
+                    "trainable": true,
+                    "dtype": "float32"
+                },
+                "name": "average",
+                "inbound_nodes": [
+                    [
+                        [
+                            "BGRU",
+                            0,
+                            1,
+                            {}
+                        ],
+                        [
+                            "BGRU",
+                            1,
+                            1,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Reshape",
+                "config": {
+                    "name": "reshape",
+                    "trainable": true,
+                    "batch_input_shape": [
+                        null,
+                        32
+                    ],
+                    "dtype": "float32",
+                    "target_shape": [
+                        1,
+                        32
+                    ]
+                },
+                "name": "reshape",
+                "inbound_nodes": [
+                    [
+                        [
+                            "average",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Average",
+                "config": {
+                    "name": "average_1",
+                    "trainable": true,
+                    "dtype": "float32"
+                },
+                "name": "average_1",
+                "inbound_nodes": [
+                    [
+                        [
+                            "BGRU",
+                            0,
+                            0,
+                            {}
+                        ],
+                        [
+                            "BGRU",
+                            1,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "AdditiveAttention",
+                "config": {
+                    "name": "additive_attention",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "causal": false,
+                    "use_scale": true
+                },
+                "name": "additive_attention",
+                "inbound_nodes": [
+                    [
+                        [
+                            "reshape",
+                            0,
+                            0,
+                            {}
+                        ],
+                        [
+                            "average_1",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Flatten",
+                "config": {
+                    "name": "flatten",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "data_format": "channels_last"
+                },
+                "name": "flatten",
+                "inbound_nodes": [
+                    [
+                        [
+                            "additive_attention",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "RepeatVector",
+                "config": {
+                    "name": "repeat_vector",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "n": 150
+                },
+                "name": "repeat_vector",
+                "inbound_nodes": [
+                    [
+                        [
+                            "flatten",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Concatenate",
+                "config": {
+                    "name": "concatenate",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "axis": -1
+                },
+                "name": "concatenate",
+                "inbound_nodes": [
+                    [
+                        [
+                            "repeat_vector",
+                            0,
+                            0,
+                            {}
+                        ],
+                        [
+                            "average_1",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Dense",
+                "config": {
+                    "name": "FF",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "units": 5,
+                    "activation": "linear",
+                    "use_bias": true,
+                    "kernel_initializer": {
+                        "class_name": "GlorotUniform",
+                        "config": {
+                            "seed": null
+                        }
+                    },
+                    "bias_initializer": {
+                        "class_name": "Zeros",
+                        "config": {}
+                    },
+                    "kernel_regularizer": null,
+                    "bias_regularizer": null,
+                    "activity_regularizer": null,
+                    "kernel_constraint": null,
+                    "bias_constraint": null
+                },
+                "name": "FF",
+                "inbound_nodes": [
+                    [
+                        [
+                            "concatenate",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            },
+            {
+                "class_name": "Softmax",
+                "config": {
+                    "name": "softmax",
+                    "trainable": true,
+                    "dtype": "float32",
+                    "axis": 2
+                },
+                "name": "softmax",
+                "inbound_nodes": [
+                    [
+                        [
+                            "FF",
+                            0,
+                            0,
+                            {}
+                        ]
+                    ]
+                ]
+            }
+        ],
+        "input_layers": [
+            [
+                "input_1",
+                0,
+                0
+            ]
+        ],
+        "output_layers": [
+            [
+                "softmax",
+                0,
+                0
+            ]
+        ]
+    }
+}
