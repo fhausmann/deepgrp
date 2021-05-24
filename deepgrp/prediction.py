@@ -5,12 +5,10 @@ from os import PathLike
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-# pytype: disable=import-error
-# pylint: disable=import-error
-from deepgrp.mss import find_mss_labels  # pylint: disable=no-name-in-module
+# pylint: disable=no-name-in-module
+from deepgrp.mss import find_mss_labels
 from deepgrp.sequence import get_max
-# pytype: enable=import-error
-# pylint: enable=import-error
+# pylint: enable=no-name-in-module
 from deepgrp.model import create_model, Options
 import deepgrp.preprocessing
 
@@ -106,7 +104,6 @@ def predict(model: keras.Model, data: tf.data.Dataset,
     """
     predictions = np.zeros(results_shape, dtype=np.float32)
     for i, batch in enumerate(data):
-        vecsize = batch.shape[1]
         index = (i * batch.shape[0] * step_size)
         probas = model.predict_on_batch(batch)
         get_max(predictions[index:], probas.numpy(), step_size)

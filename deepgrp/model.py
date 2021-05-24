@@ -258,7 +258,7 @@ class ReverseComplement(tf.keras.layers.Layer):
     _expects_training_arg: bool
 
     def __init__(self, complements: List[int], **kwargs):
-        super(ReverseComplement, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._indices = complements
         self._axis = [1]
 
@@ -285,7 +285,7 @@ class ReverseComplement(tf.keras.layers.Layer):
 
         """
         config = {'complements': self._indices}
-        base_config = super(ReverseComplement, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
