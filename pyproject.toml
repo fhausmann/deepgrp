@@ -39,6 +39,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.messages_control]
 disable = "import-error"
+extension-pkg-allow-list = [
+    "deepgrp.sequence",
+    "deepgrp.mss",
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
