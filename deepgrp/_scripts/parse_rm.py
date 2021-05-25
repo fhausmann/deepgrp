@@ -146,9 +146,10 @@ def read_repeatmasker(motif_hash: Dict[str, int], motif_mut_hash: Dict[str,
             if motif and motif.group(1) in motif_hash:
                 repeat.typ = _TYPES['HSATII']
             elif motif and len(motif.group(1)) % len0 == 0:
-                count, count_mut = _check_motifs(motif.group(1), motif_mut_hash,
-                                                    motif_hash)
-                if count > 0 and (count + count_mut) * len0 == len(motif.group(1)):
+                count, count_mut = _check_motifs(motif.group(1),
+                                                 motif_mut_hash, motif_hash)
+                if count > 0 and (count + count_mut) * len0 == len(
+                        motif.group(1)):
                     repeat.typ = _TYPES['HSATII']
         if repeat.ctg and repeat.typ > 0:
             yield repeat
@@ -162,7 +163,8 @@ def main():
     parser.add_argument('file',
                         type=argparse.FileType('r'),
                         help='Repeatmasker output')
-    parser.add_argument("-o",'--outputfile',
+    parser.add_argument("-o",
+                        '--outputfile',
                         type=str,
                         default=None,
                         help='Output filename')

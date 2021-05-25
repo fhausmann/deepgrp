@@ -82,7 +82,7 @@ def _calc_indices(array: np.ndarray, vecsize: int) -> np.ndarray:
 
 
 def fetch_batch(
-        options: Options, data: preprocessing.Data
+    options: Options, data: preprocessing.Data
 ) -> Callable[[], Iterator[Tuple[Tuple[np.ndarray, np.ndarray], np.ndarray]]]:
     """Creates a function used for the creation of tensorflow Dataset.
 

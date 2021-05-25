@@ -25,10 +25,9 @@ def _update_options(options: Options, dictionary: Dict[str, Any]) -> Options:
     return options
 
 
-def build_and_optimize(train_data: Data, val_data: Data, step_size: int,
-                       options: Options,
-                       options_dict: Dict[str, Union[str, float]]
-                       ) -> Dict[str, Any]:
+def build_and_optimize(
+        train_data: Data, val_data: Data, step_size: int, options: Options,
+        options_dict: Dict[str, Union[str, float]]) -> Dict[str, Any]:
     """Builds an DeepGRP model with updated options,
     trains it and validates it. Used for hyperopt optimization.
 
@@ -101,8 +100,8 @@ def build_and_optimize(train_data: Data, val_data: Data, step_size: int,
     return results
 
 
-def run_a_trial(space: Dict[str, Any],
-                objective: Callable[[Dict[str, Any]], Dict[str, Any]],
+def run_a_trial(space: Dict[str, Any], objective: Callable[[Dict[str, Any]],
+                                                           Dict[str, Any]],
                 project_root_dir: PathLike, max_evals: int) -> int:
     """Runs a hyperopt TPE meta optimisation step. Restores previous run,
      if `results.pkl` is available.

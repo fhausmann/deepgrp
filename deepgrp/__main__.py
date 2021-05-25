@@ -67,9 +67,9 @@ def _predict(
     _LOG.debug("One hot encoding sequence.")
     start_pos, inputs = dgsequence.one_hot_encode_dna_sequence(dnasequence)
     _LOG.debug("Start prediction.")
-    data_iterator = dgpred.fetch_validation_batch(
-        inputs, step_size, options.batch_size, options.vecsize
-    )
+    data_iterator = dgpred.fetch_validation_batch(inputs, step_size,
+                                                  options.batch_size,
+                                                  options.vecsize)
     output_shape = (inputs.shape[1], model.output_shape[2])
     prediction = dgpred.predict(model, data_iterator, output_shape, step_size)
     _LOG.debug("Finish prediction.")
@@ -83,11 +83,12 @@ def _predict(
 
 class CommandLineParser:
     """Commandline parser."""
-
     def __init__(self, **kwargs):
         kwargs.setdefault("prog", "deepgrp")
-        kwargs.setdefault("formatter_class", argparse.ArgumentDefaultsHelpFormatter)
-        kwargs.setdefault("description", "DeepGRP - Prediction of repetitive elements")
+        kwargs.setdefault("formatter_class",
+                          argparse.ArgumentDefaultsHelpFormatter)
+        kwargs.setdefault("description",
+                          "DeepGRP - Prediction of repetitive elements")
 
         self.parser = argparse.ArgumentParser(**kwargs)
         self.args = None
@@ -95,7 +96,8 @@ class CommandLineParser:
         self.xla = False
         self.verbose = 0
 
-        subparsers = self.parser.add_subparsers(help="sub-command help", dest="command")
+        subparsers = self.parser.add_subparsers(help="sub-command help",
+                                                dest="command")
         self.parser.add_argument(
             "--batch_size",
             "-b",
@@ -134,12 +136,14 @@ class CommandLineParser:
             help="Number of threads (all=0)",
         )
 
-        self.parser.add_argument(
-            "--xla", action="store_true", help="Enable XLA acceleration for TensorFlow"
-        )
-        self.parser.add_argument(
-            "-v", "--verbose", action="count", default=0, help="Increase verbosity"
-        )
+        self.parser.add_argument("--xla",
+                                 action="store_true",
+                                 help="Enable XLA acceleration for TensorFlow")
+        self.parser.add_argument("-v",
+                                 "--verbose",
+                                 action="count",
+                                 default=0,
+                                 help="Increase verbosity")
 
         train_subparser = subparsers.add_parser(
             name="train",
@@ -147,9 +151,9 @@ class CommandLineParser:
             description="Train a deepgrp model",
         )
 
-        train_subparser.add_argument(
-            "parameter", type=str, help="toml file with parameters"
-        )
+        train_subparser.add_argument("parameter",
+                                     type=str,
+                                     help="toml file with parameters")
 
         train_subparser.add_argument(
             "trainfile",
@@ -185,15 +189,17 @@ class CommandLineParser:
             description="predict using a deepgrp model",
         )
 
-        predict_subparser.add_argument(
-            "model", type=str, help="TensorFlow Model in HDF5 format"
-        )
-        predict_subparser.add_argument(
-            "FASTA", nargs="+", type=str, help="Fasta input files"
-        )
-        predict_subparser.add_argument(
-            "--output", type=str, default="-", help="Output filename"
-        )
+        predict_subparser.add_argument("model",
+                                       type=str,
+                                       help="TensorFlow Model in HDF5 format")
+        predict_subparser.add_argument("FASTA",
+                                       nargs="+",
+                                       type=str,
+                                       help="Fasta input files")
+        predict_subparser.add_argument("--output",
+                                       type=str,
+                                       default="-",
+                                       help="Output filename")
         predict_subparser.add_argument(
             "--no_use_mss",
             "-m",
@@ -215,8 +221,10 @@ class CommandLineParser:
         if self.threads > 0:
             inter_op_threads = max(1, self.threads // 2)
             intra_op_threads = max(1, inter_op_threads + self.threads % 2)
-            tf.config.threading.set_inter_op_parallelism_threads(inter_op_threads)
-            tf.config.threading.set_intra_op_parallelism_threads(intra_op_threads)
+            tf.config.threading.set_inter_op_parallelism_threads(
+                inter_op_threads)
+            tf.config.threading.set_intra_op_parallelism_threads(
+                intra_op_threads)
         if self.xla:
             os.environ["TF_XLA_FLAGS"] = "--tf_xla_cpu_global_jit"
             tf.config.optimizer.set_jit(True)
@@ -259,12 +267,14 @@ class CommandLineParser:
         )
         options.vecsize = model.input_shape[1]
         _LOG.info("Model loading finished successfully!")
-        outstream = sys.stdout if args.output == "-" else open(args.output, "w")
+        outstream = sys.stdout if args.output == "-" else open(
+            args.output, "w")
 
         for filename in args.FASTA:
             _LOG.info("Processing %s", filename)
             try:
-                filestream = sys.stdin if filename == "-" else open(filename, "r")
+                filestream = sys.stdin if filename == "-" else open(
+                    filename, "r")
                 for header, dnasequence in _read_multi_fasta(filestream):
                     predictions, startpos = _predict(
                         dnasequence,
@@ -273,13 +283,11 @@ class CommandLineParser:
                         args.step_size,
                         use_mss=not args.no_use_mss,
                     )
-                    for segment in dgsequence.yield_segments(predictions, startpos):
+                    for segment in dgsequence.yield_segments(
+                            predictions, startpos):
                         if segment[2] > 0:
-                            outstream.write(
-                                "{}\t{}\t{}\t{}\t{}\n".format(
-                                    filename, header, *segment
-                                )
-                            )
+                            outstream.write("{}\t{}\t{}\t{}\t{}\n".format(
+                                filename, header, *segment))
             finally:
                 if filename != "-":
                     filestream.close()
