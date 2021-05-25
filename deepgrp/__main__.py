@@ -9,13 +9,13 @@ import numpy as np
 import tensorflow as tf
 import deepgrp.prediction as dgpred
 import deepgrp.model as dgmodel
-from deepgrp.sequence import one_hot_encode_dna_sequence, yield_segments  # pylint: disable=import-error, no-name-in-module
+from deepgrp import sequence as dgsequence  # pylint: disable=no-name-in-module
 
 logging.basicConfig()
 _LOG = logging.getLogger(__name__)
 
 
-def read_multi_fasta(filestream: TextIO) -> Iterator[Tuple[str, str]]:
+def _read_multi_fasta(filestream: TextIO) -> Iterator[Tuple[str, str]]:
     """Reads multi FASTA file.
 
     Args:
@@ -30,25 +30,29 @@ def read_multi_fasta(filestream: TextIO) -> Iterator[Tuple[str, str]]:
     sequence: List[str] = []
     for line in filestream:
         line = line.strip()
-        if line[0] == '>':
+        if line[0] == ">":
             if header:
-                yield header, ''.join(sequence)
+                yield header, "".join(sequence)
             header = line[1:]
             sequence = []
         else:
             sequence.append(line.upper())
     if header:
-        yield header, ''.join(sequence)
+        yield header, "".join(sequence)
 
 
-def predict(model: tf.keras.Model, inputs: np.ndarray,
-            options: dgmodel.Options, step_size: int,
-            use_mss: bool) -> np.ndarray:
+def _predict(
+    dnasequence: str,
+    model: tf.keras.Model,
+    options: dgmodel.Options,
+    step_size: int,
+    use_mss: bool,
+) -> Tuple[np.ndarray, int]:
     """Runs a prediction for one sequence .
 
     Args:
+        dnasequence (str): DNA sequence to predict for.
         model (tf.keras.Model): Model to use for prediction
-        inputs (np.ndarray): One hot encoded sequence
         options (dgmodel.Options): Hyperparameter used for model
                                     creation and prediction
         step_size (int): Window step size.
@@ -56,138 +60,253 @@ def predict(model: tf.keras.Model, inputs: np.ndarray,
 
     Returns:
         np.ndarray: predictions from TensorFlow and potential the MSS
+        int: Start position of the prediction (== number of leading N's)
 
     """
-    _LOG.debug("Start prediction.")
 
-    data_iterator = dgpred.fetch_validation_batch(inputs, step_size,
-                                                  options.batch_size,
-                                                  options.vecsize)
+    _LOG.debug("One hot encoding sequence.")
+    start_pos, inputs = dgsequence.one_hot_encode_dna_sequence(dnasequence)
+    _LOG.debug("Start prediction.")
+    data_iterator = dgpred.fetch_validation_batch(
+        inputs, step_size, options.batch_size, options.vecsize
+    )
     output_shape = (inputs.shape[1], model.output_shape[2])
     prediction = dgpred.predict(model, data_iterator, output_shape, step_size)
     _LOG.debug("Finish prediction.")
     if use_mss:
         _LOG.debug("Applying MSS.")
-        return dgpred.apply_mss(prediction, options)
-    return dgpred.softmax(prediction)
+        prediction = dgpred.apply_mss(prediction, options)
+    else:
+        prediction = dgpred.softmax(prediction)
+    return np.asanyarray(prediction.argmax(axis=1)), start_pos
 
 
-def _main(args: 'argparse.Namespace'):
-    if args.threads > 0:
-        inter_op_threads = max(1, args.threads // 2)
-        intra_op_threads = max(1, inter_op_threads + args.threads % 2)
-        tf.config.threading.set_inter_op_parallelism_threads(inter_op_threads)
-        tf.config.threading.set_intra_op_parallelism_threads(intra_op_threads)
-    _LOG.debug("Loading model %s!", args.model)
-    model = tf.keras.models.load_model(args.model,
-                                       custom_objects={
-                                           'ReverseComplement':
-                                           dgmodel.ReverseComplement,
-                                       })
-    _LOG.info("Model loading finished successfully!")
+class CommandLineParser:
+    """Commandline parser."""
 
-    options = dgmodel.Options(min_mss_len=args.min_mss_length,
-                              batch_size=args.batch_size,
-                              xdrop_len=args.xdrop_length,
-                              vecsize=model.input_shape[1])
-    outstream = sys.stdout if args.output == '-' else open(args.output, 'w')
+    def __init__(self, **kwargs):
+        kwargs.setdefault("prog", "deepgrp")
+        kwargs.setdefault("formatter_class", argparse.ArgumentDefaultsHelpFormatter)
+        kwargs.setdefault("description", "DeepGRP - Prediction of repetitive elements")
 
-    for file in args.FASTA:
-        if not os.access(file, os.R_OK):
-            _LOG.warning("Could not read %s, skipping!", file)
-            continue
-        _LOG.info("Processing %s", file)
-        filestream = sys.stdin if file == '-' else open(file, 'r')
-        for header, sequence in read_multi_fasta(filestream):
-            _LOG.debug("One hot encoding sequence.")
-            start_pos, one_hot_sequence = one_hot_encode_dna_sequence(sequence)
-            del sequence
-            predictions = predict(model,
-                                  one_hot_sequence,
-                                  options,
-                                  args.step_size,
-                                  use_mss=not args.no_use_mss)
-            del one_hot_sequence
-            for segment in yield_segments(predictions.argmax(axis=1),
-                                          start_pos):
-                if segment[2] > 0:
-                    outstream.write("{}\t{}\t{}\t{}\t{}\n".format(
-                        file, header, *segment))
-        if file != "-":
-            filestream.close()
-    if args.output != '-':
-        outstream.close()
+        self.parser = argparse.ArgumentParser(**kwargs)
+        self.args = None
+        self.threads = 1
+        self.xla = False
+        self.verbose = 0
+
+        subparsers = self.parser.add_subparsers(help="sub-command help", dest="command")
+        self.parser.add_argument(
+            "--batch_size",
+            "-b",
+            type=int,
+            default=256,
+            help="Batch size to use for prediction with TensorFlow model ",
+        )
+        self.parser.add_argument(
+            "--step_size",
+            "-s",
+            type=int,
+            default=50,
+            help="Window step size",
+        )
+        self.parser.add_argument(
+            "--xdrop_length",
+            "-x",
+            type=int,
+            default=50,
+            help="XDrop parameter for MSS algorithm, ignored if "
+            "--no_use_mss, disabled with values<0",
+        )
+        self.parser.add_argument(
+            "--min_mss_length",
+            "-l",
+            type=int,
+            default=50,
+            help="Minimal length of maximum scoring segments, "
+            "ignored if --no_use_mss",
+        )
+        self.parser.add_argument(
+            "--threads",
+            "-t",
+            type=int,
+            default=1,
+            help="Number of threads (all=0)",
+        )
+
+        self.parser.add_argument(
+            "--xla", action="store_true", help="Enable XLA acceleration for TensorFlow"
+        )
+        self.parser.add_argument(
+            "-v", "--verbose", action="count", default=0, help="Increase verbosity"
+        )
+
+        train_subparser = subparsers.add_parser(
+            name="train",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            description="Train a deepgrp model",
+        )
+
+        train_subparser.add_argument(
+            "parameter", type=str, help="toml file with parameters"
+        )
+
+        train_subparser.add_argument(
+            "trainfile",
+            type=str,
+            help="Training data preprocessed with ´preprocess_sequence´",
+        )
+        train_subparser.add_argument(
+            "validfile",
+            type=str,
+            help="Validation data preprocessed with ´preprocess_sequence´",
+        )
+        train_subparser.add_argument(
+            "bedfile",
+            type=str,
+            help="Ground truth repeat annotation data.",
+        )
+        train_subparser.add_argument(
+            "--logdir",
+            type=str,
+            default=".",
+            help="Directory for the Tensorflow log files.",
+        )
+        train_subparser.add_argument(
+            "--modelfile",
+            type=str,
+            default="model.hdf5",
+            help="Output path for the model file.",
+        )
+
+        predict_subparser = subparsers.add_parser(
+            name="predict",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            description="predict using a deepgrp model",
+        )
+
+        predict_subparser.add_argument(
+            "model", type=str, help="TensorFlow Model in HDF5 format"
+        )
+        predict_subparser.add_argument(
+            "FASTA", nargs="+", type=str, help="Fasta input files"
+        )
+        predict_subparser.add_argument(
+            "--output", type=str, default="-", help="Output filename"
+        )
+        predict_subparser.add_argument(
+            "--no_use_mss",
+            "-m",
+            action="store_true",
+            help="Disable maximum scoring segment algorithm",
+        )
+
+    def parse_args(self) -> "CommandLineParser":
+        """Parse command line arguments."""
+        args = self.parser.parse_args()
+        self.threads = args.threads
+        self.verbose = args.verbose
+        self.xla = args.xla
+        self.args = args
+        return self
+
+    def setup_tensorflow(self) -> "CommandLineParser":
+        """Set TensorFlow threads and XLA."""
+        if self.threads > 0:
+            inter_op_threads = max(1, self.threads // 2)
+            intra_op_threads = max(1, inter_op_threads + self.threads % 2)
+            tf.config.threading.set_inter_op_parallelism_threads(inter_op_threads)
+            tf.config.threading.set_intra_op_parallelism_threads(intra_op_threads)
+        if self.xla:
+            os.environ["TF_XLA_FLAGS"] = "--tf_xla_cpu_global_jit"
+            tf.config.optimizer.set_jit(True)
+        return self
+
+    def set_logging(self) -> "CommandLineParser":
+        """Setup logging."""
+        loglevels = [logging.WARNING, logging.INFO, logging.DEBUG]
+        loglevel = loglevels[min(len(loglevels) - 1, self.verbose)]
+        _LOG.setLevel(level=loglevel)
+        tf.debugging.set_log_device_placement(loglevel == logging.DEBUG)
+        return self
+
+    def run(self):
+        """Run the command provided by the user."""
+        options = dgmodel.Options(
+            min_mss_len=self.args.min_mss_length,
+            batch_size=self.args.batch_size,
+            xdrop_len=self.args.xdrop_length,
+        )
+        getattr(self, self.args.command)(self.args, options)
+
+    @staticmethod
+    def predict(args: argparse.Namespace, options: dgmodel.Options):
+        """Predict with deepgrp.
+
+        Args:
+            args (argparse.Namespace): Command line arguments.
+                Includes: 'model', 'output', 'FASTA', 'no_use_mss',
+                'step_size'
+            options (dgmodel.Options): Default and user provided options.
+        """
+
+        _LOG.debug("Loading model %s!", args.model)
+        model = tf.keras.models.load_model(
+            args.model,
+            custom_objects={
+                "ReverseComplement": dgmodel.ReverseComplement,
+            },
+        )
+        options.vecsize = model.input_shape[1]
+        _LOG.info("Model loading finished successfully!")
+        outstream = sys.stdout if args.output == "-" else open(args.output, "w")
+
+        for filename in args.FASTA:
+            _LOG.info("Processing %s", filename)
+            try:
+                filestream = sys.stdin if filename == "-" else open(filename, "r")
+                for header, dnasequence in _read_multi_fasta(filestream):
+                    predictions, startpos = _predict(
+                        dnasequence,
+                        model,
+                        options,
+                        args.step_size,
+                        use_mss=not args.no_use_mss,
+                    )
+                    for segment in dgsequence.yield_segments(predictions, startpos):
+                        if segment[2] > 0:
+                            outstream.write(
+                                "{}\t{}\t{}\t{}\t{}\n".format(
+                                    filename, header, *segment
+                                )
+                            )
+            finally:
+                if filename != "-":
+                    filestream.close()
+        if args.output != "-":
+            outstream.close()
+
+    @staticmethod
+    def train(args: argparse.Namespace, options: dgmodel.Options):
+        """Train deepgrp.
+
+        Args:
+            args (argparse.Namespace): Command line arguments.
+                Includes: 'parameter', 'trainfile', 'validfile', 'bedfile',
+                'logdir', 'modelfile'
+            options (dgmodel.Options): Default and user provided options.
+        """
+        with open(args.parameter, "r") as file:
+            parameter = dgmodel.Options.from_toml(file)
+        parameter.fromdict(options.todict())
+
+        raise NotImplementedError()  # TODO:  Add training function here.
 
 
 def main():
     """ Main function """
-    parser = argparse.ArgumentParser(
-        prog="deepgrp",
-        description="DeepGRP - "
-        "Prediction of repetitive elements using pretrained TensorFlow model "
-        "with FASTA input files")
-
-    parser.add_argument(
-        '--batch_size',
-        '-b',
-        type=int,
-        default=256,
-        help="Batch size to use for prediction with TensorFlow model "
-        "(default: 256)")
-    parser.add_argument('--step_size',
-                        '-s',
-                        type=int,
-                        default=50,
-                        help="Window step size (default: 50)")
-    parser.add_argument('--xdrop_length',
-                        '-x',
-                        type=int,
-                        default=50,
-                        help="XDrop parameter for MSS algorithm, ignored if "
-                        "--no_use_mss, disabled with values<0 (default: 50)")
-    parser.add_argument('--min_mss_length',
-                        '-l',
-                        type=int,
-                        default=50,
-                        help="Minimal length of maximum scoring segments, "
-                        "ignored if --no_use_mss (default: 50)")
-    parser.add_argument('--threads',
-                        '-t',
-                        type=int,
-                        default=1,
-                        help="Number of threads (default:1, all=0)")
-    parser.add_argument('--no_use_mss',
-                        '-m',
-                        action='store_true',
-                        help="Disable maximum scoring segment algorithm")
-    parser.add_argument('--output',
-                        type=str,
-                        default='-',
-                        help="Output filename (default: stdout)")
-    parser.add_argument('--xla',
-                        action='store_true',
-                        help="Enable XLA acceleration for TensorFlow")
-    parser.add_argument('-v',
-                        '--verbose',
-                        action='count',
-                        default=0,
-                        help="Increase verbositiy")
-    parser.add_argument('model',
-                        type=str,
-                        help="TensorFlow Model in HDF5 format")
-    parser.add_argument('FASTA', nargs='+', type=str, help="Fasta input files")
-
-    args = parser.parse_args()
-
-    loglevels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    loglevel = loglevels[min(len(loglevels) - 1, args.verbose)]
-    _LOG.setLevel(level=loglevel)
-    tf.debugging.set_log_device_placement(loglevel == logging.DEBUG)
-    if args.xla:
-        os.environ['TF_XLA_FLAGS'] = "--tf_xla_cpu_global_jit"
-        tf.config.optimizer.set_jit(True)
-    _main(args)
+    CommandLineParser().parse_args().set_logging().setup_tensorflow().run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
