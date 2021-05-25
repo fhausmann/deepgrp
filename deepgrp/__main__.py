@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 import deepgrp.prediction as dgpred
 import deepgrp.model as dgmodel
-from deepgrp.sequence import one_hot_encode_dna_sequence, yield_segments  # pylint: disable=import-error, no-name-in-module
+from deepgrp import sequence as dgsequence
 
 logging.basicConfig()
 _LOG = logging.getLogger(__name__)
@@ -100,7 +100,8 @@ def _main(args: 'argparse.Namespace'):
         filestream = sys.stdin if file == '-' else open(file, 'r')
         for header, sequence in read_multi_fasta(filestream):
             _LOG.debug("One hot encoding sequence.")
-            start_pos, one_hot_sequence = one_hot_encode_dna_sequence(sequence)
+            start_pos, one_hot_sequence = dgsequence.one_hot_encode_dna_sequence(
+                sequence)
             del sequence
             predictions = predict(model,
                                   one_hot_sequence,
@@ -108,8 +109,8 @@ def _main(args: 'argparse.Namespace'):
                                   args.step_size,
                                   use_mss=not args.no_use_mss)
             del one_hot_sequence
-            for segment in yield_segments(predictions.argmax(axis=1),
-                                          start_pos):
+            for segment in dgsequence.yield_segments(
+                    predictions.argmax(axis=1), start_pos):
                 if segment[2] > 0:
                     outstream.write("{}\t{}\t{}\t{}\t{}\n".format(
                         file, header, *segment))
