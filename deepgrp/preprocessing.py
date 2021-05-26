@@ -69,4 +69,4 @@ def drop_start_end_n(fwd: np.ndarray,
 
 
 # Collection of forward one hot encoded sequence and true annotations
-Data = NamedTuple("Data", [('fwd', np.ndarray), ('truelbl', np.ndarray)])
+Data = NamedTuple("Data", [('fwd', np.ndarray), ('truelbl', np.ndarray)]) # pragma: no-cover
