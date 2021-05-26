@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 import deepgrp.prediction as dgpred
 import deepgrp.model as dgmodel
+import deepgrp.training as dgtrain
 from deepgrp import sequence as dgsequence  # pylint: disable=no-name-in-module
 
 logging.basicConfig()
@@ -295,7 +296,7 @@ class CommandLineParser:
             outstream.close()
 
     @staticmethod
-    def train(args: argparse.Namespace, options: dgmodel.Options):
+    def train(args: argparse.Namespace, options: dgmodel.Options) -> None:
         """Train deepgrp.
 
         Args:
@@ -307,8 +308,28 @@ class CommandLineParser:
         with open(args.parameter, "r") as file:
             parameter = dgmodel.Options.from_toml(file)
         parameter.fromdict(options.todict())
+        logdir = args.logdir
 
-        raise NotImplementedError()  # TODO:  Add training function here.
+        # add _LOG.xxx functions for logging
+        # include a check if preprocessed?
+        # check if logdir exists?
+        # how to load data in?
+        # specific name for trained model?
+        # load data into np.ndarray
+        _LOG.info("Loading %s as training data", args.trainfile)
+        train_data = np.load(args.trainfile, allow_pickle=False)
+        _LOG.info("Loading %s as validation data", args.validfile)
+        val_data = np.load(args.valdata, allow_pickle=False)
+
+        # training
+        _LOG.info("Creating model for training")
+        model = dgmodel.create_model(parameter)
+        _LOG.info("Training Model")
+        dgtrain.training((train_data, val_data), parameter, model, logdir)
+
+        # save model in h5 format
+        _LOG.info("Saving model as %s", args.modelfile)
+        model.save(args.modelfile)
 
 
 def main():
