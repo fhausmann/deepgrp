@@ -40,7 +40,7 @@ cdef _one_hot_encode_dna_sequence(const unsigned char[:] sequence):
 def get_segments(np.ndarray[long,ndim=1] classes, long startpos):
     """Gets start, end and label of non-null segments from array of labels"""
     cdef long end
-    cdef long length = classes.size
+    cdef long length = classes.size - 1
     cdef long currentlabel = classes[startpos]
 
     while startpos < length and currentlabel==0:
