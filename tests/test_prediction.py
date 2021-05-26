@@ -1,10 +1,15 @@
 """Tests for deepgrp.prediction."""
-import pytest
 import numpy as np
+import pandas as pd
+import pycm
+import pytest
 import scipy.special
+import sklearn.metrics
+import tensorflow as tf
 
-import deepgrp.prediction as dgpredict
 import deepgrp.mss
+import deepgrp.prediction as dgpredict
+import deepgrp.preprocessing
 
 #pylint: disable=no-self-use, missing-function-docstring, missing-class-docstring
 
@@ -67,25 +72,122 @@ def test_softmax():
     np.testing.assert_allclose(got, expected)
 
 
-def test_predict():
-    pytest.xfail("Not implemented")
+@pytest.mark.parametrize("step_size", (1, 2))
+def test_predict(step_size):
+    class _Model:
+        # pylint: disable=too-few-public-methods
+        def predict_on_batch(self, _):
+            tmp = np.zeros((4, 10, 3))
+            tmp[:, 0, 1] = 1
+            return tf.convert_to_tensor(tmp, dtype=tf.float32)
+
+    testdata = (np.random.rand(4, 10, 5) for _ in range(3))
+    got = dgpredict.predict(model=_Model(),
+                            data=testdata,
+                            results_shape=(50, 3),
+                            step_size=step_size)
+    np.testing.assert_array_equal(got.sum(axis=0), [0, 12, 0])
+    for i in range(0, 12):
+        i = i * step_size
+        np.testing.assert_equal(got[i], [0, 1, 0])
 
 
-def test_predict_complete():
-    pytest.xfail("Not implemented")
+@pytest.mark.parametrize("step_size", (10, 20))
+@pytest.mark.parametrize("use_mss", (True, False))
+def test_predict_complete(monkeypatch, step_size, use_mss, tmp_path,
+                          randomword):
 
+    opt = deepgrp.model.Options()
+    testdata = np.zeros((100, 10))
 
-def test_calculate_multiclass_matthews_cc():
-    pytest.xfail("Not implemented")
+    def _check_setup_prediction_from_options_checkpoint(options, logdir):
+        assert logdir == tmp_path
+        assert id(options) == id(opt)
+        return randomword + "MODEL"
+
+    monkeypatch.setattr(dgpredict, "setup_prediction_from_options_checkpoint",
+                        _check_setup_prediction_from_options_checkpoint)
+
+    def _check_fetch_validation_batch(data, steps, batchsize, vecsize):
+        assert id(data) == id(testdata)
+        assert steps == step_size
+        assert batchsize == opt.batch_size
+        assert vecsize == opt.vecsize
+        return randomword + "DATA"
+
+    monkeypatch.setattr(dgpredict, "fetch_validation_batch",
+                        _check_fetch_validation_batch)
+
+    def _check_predict(model, val_iterator, ouput_shape, steps):
+        assert model == (randomword + "MODEL")
+        assert val_iterator == (randomword + "DATA")
+        assert ouput_shape == (4, 100)
+        assert steps == step_size
+        return randomword + "PREDICT"
+
+    monkeypatch.setattr(dgpredict, "predict", _check_predict)
+
+    def _check_apply_mss(data, options):
+        assert id(opt) == id(options)
+        assert data == randomword + "PREDICT"
+        return randomword + "MSS"
+
+    monkeypatch.setattr(dgpredict, "apply_mss", _check_apply_mss)
+
+    def _check_softmax(data):
+        assert data == randomword + "PREDICT"
+        return randomword + "SOFTMAX"
+
+    monkeypatch.setattr(dgpredict, "softmax", _check_softmax)
+
+    data = deepgrp.preprocessing.Data(testdata, np.random.rand(100, 4))
+
+    got = dgpredict.predict_complete(step_size=step_size,
+                                     options=opt,
+                                     logdir=tmp_path,
+                                     data=data,
+                                     use_mss=use_mss)
+    if use_mss:
+        assert got == randomword + "MSS"
+    else:
+        assert got == randomword + "SOFTMAX"
 
 
 def test_calculate_metrics():
-    pytest.xfail("Not implemented")
+    truelbl = np.random.choice([0, 1, 2, 3], size=100, replace=True)
+    predlbl = np.random.choice([0, 1, 2, 3], size=100, replace=True)
+    got_cnf, got_stats = dgpredict.calculate_metrics(predlbl, truelbl)
+    got_stats = pd.DataFrame(got_stats)
+    expected = pycm.ConfusionMatrix(truelbl, predlbl)
+    np.testing.assert_equal(got_cnf, expected.to_array())
+    expected_stats = {
+        k: expected.class_stat[k]  # pylint: disable=no-member
+        for k in
+        ["TPR", "TNR", "PPV", "NPV", "FPR", "FNR", "FDR", "ACC", "F1"]
+    }
+    expected_stats["MCC"] = sklearn.metrics.matthews_corrcoef(truelbl, predlbl)
+    expected_stats["TotalACC"] = expected.overall_stat["Overall ACC"]  # pylint: disable=no-member
+    expected_stats = pd.DataFrame(expected_stats)
+    pd.testing.assert_frame_equal(got_stats, expected_stats)
 
 
 def test_confusion_matrix():
-    pytest.xfail("Not implemented")
+    truelbl = np.random.choice([0, 1, 2, 3], size=100, replace=True)
+    predlbl = np.random.choice([0, 1, 2, 3], size=100, replace=True)
+    got = dgpredict.confusion_matrix(truelbl, predlbl)
+    expected = pycm.ConfusionMatrix(truelbl, predlbl).to_array()
+    np.testing.assert_equal(got, expected)
 
 
-def test_filter_segments():
-    pytest.xfail("Not implemented")
+@pytest.mark.parametrize("min_len", (10, 20))
+def test_filter_segments(min_len):
+    segment_length = min_len * 2
+    data = np.zeros(1000)
+    data[110:110 + segment_length] = 1
+    data[210 + segment_length:210 + 2 * segment_length] = 1
+    expected = data.copy()
+    data[0:min_len - 1] = 1
+    data[120 + segment_length:120 + segment_length + min_len - 1] = 1
+    data[(-min_len) + 1:] = 1
+    dgpredict.filter_segments(data, min_len=min_len)
+    np.testing.assert_equal(data, expected)
