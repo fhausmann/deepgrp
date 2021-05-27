@@ -46,7 +46,7 @@ def build_and_optimize(
     options = _update_options(options, options_dict)
     logdir = create_logdir(options)
 
-    def _train_test(model):
+    def _train_test(model): # pragma: no cover
         extra_callback = [hp.KerasCallback(logdir, options_dict)]
         training((train_data, val_data), options, model, logdir,
                  extra_callback)
