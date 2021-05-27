@@ -101,6 +101,28 @@ Requirements are listed in `pyproject.toml`__.
 
 Additionally for compiling C/Cython code, a C compiler should be installed.
 
+Contribution:
+=============
+First of all any contributing are very welcome.
+If you want to contribute, please make a Pull request with your changes.
+Your code should be formatted using `yapf`__ using the default settings,
+they and they should pass all tests without issues.
+For testing currently `mypy`__ and `pylint`__ static tests are used, while
+`pytest`__ is used for functional tests.
+
+.. __: https://github.com/google/yapf
+.. __: https://mypy.readthedocs.io/en/latest/
+.. __: https://pylint.pycqa.org/en/latest/
+.. __: https://docs.pytest.org/en/6.2.x/
+
+
+If you're adding new functionalities please provide corresponding tests
+in the `tests`__ directory.
+
+.. __: ./tests/
+
+Feel free to ask in case of any questions.
+
 Further information
 ===================
 You can find material to reproduce
