@@ -28,7 +28,6 @@ mypy = "^0.812"
 yapf = "^0.31.0"
 freezegun = "^1.1.0"
 pycm = "^3.1"
-scikit-learn = "^0.24.2"
 
 [tool.poetry.scripts]
 preprocess_sequence = 'deepgrp._scripts.preprocess_sequence:main'

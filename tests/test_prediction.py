@@ -4,7 +4,6 @@ import pandas as pd
 import pycm
 import pytest
 import scipy.special
-import sklearn.metrics
 import tensorflow as tf
 
 import deepgrp.mss
@@ -165,7 +164,7 @@ def test_calculate_metrics():
         for k in
         ["TPR", "TNR", "PPV", "NPV", "FPR", "FNR", "FDR", "ACC", "F1"]
     }
-    expected_stats["MCC"] = sklearn.metrics.matthews_corrcoef(truelbl, predlbl)
+    expected_stats["MCC"] = expected.overall_stat["Overall MCC"]  # pylint: disable=no-member
     expected_stats["TotalACC"] = expected.overall_stat["Overall ACC"]  # pylint: disable=no-member
     expected_stats = pd.DataFrame(expected_stats)
     pd.testing.assert_frame_equal(got_stats, expected_stats)
