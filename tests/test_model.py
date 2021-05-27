@@ -15,6 +15,7 @@ from tensorflow.python.keras import keras_parameterized, testing_utils
 
 from deepgrp import model
 
+
 @freeze_time('19900305121503')
 def test_create_logdir(tmp_path):
     opt = model.Options(project_root_dir=(str(tmp_path)))
