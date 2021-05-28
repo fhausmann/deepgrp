@@ -310,16 +310,43 @@ class CommandLineParser:
         parameter.fromdict(options.todict())
         logdir = args.logdir
 
-        # add _LOG.xxx functions for logging
-        # include a check if preprocessed?
+        # get which chromosome is used for training and which for validation
+        if args.trainfile[-10:] != '.fa.gz.npz' or \
+            args.validfile[-10:] != '.fa.gz.npz':
+                # train or valid file is not valid
+                sys.stderr.write('Training and validation file given must be ' +
+                                'in the format chr[chrnumber].fa.gz.npz, ' +
+                                'e.g. chr1.fa.gz.npz\n')
+                exit(1)
+        train_chr = os.path.basename(args.trainfile).split('.')[0]
+        val_chr = os.path.basename(args.validfile).split('.')[0]
+
         # check if logdir exists?
-        # how to load data in?
-        # specific name for trained model?
-        # load data into np.ndarray
-        _LOG.info("Loading %s as training data", args.trainfile)
-        train_data = np.load(args.trainfile, allow_pickle=False)
-        _LOG.info("Loading %s as validation data", args.validfile)
-        val_data = np.load(args.valdata, allow_pickle=False)
+        if not os.path.isdir(logdir):
+            # logdir is not valid
+            sys.stderr.write('Given logdir is not a Directory\n')
+            exit(1)
+
+        # load data
+        _LOG.info("Loading in all data necessary from %s, %s, %s",
+                  args.trainfile, args.validfile, args.bedfile)
+        train_fwd = np.load(args.trainfile, allow_pickle=False)['fwd']
+        val_fwd = np.load(args.valdata, allow_pickle=False)['fwd']
+
+        # preprocess
+        ## preprocess y (bedfile)
+        y_train = preprocessing.preprocess_y(args.bedfile, train_chr,
+                                    train_fwd.shape[1],
+                                    parameter.repeats_to_search)
+        y_val = preprocessing.preprocess_y(args.bedfile, val_chr,
+                                    val_fwd.shape[1],
+                                    parameter.repeats_to_search)
+
+        ## preprocess training and validation data
+        train_fwd, y_train = preprocessing.drop_start_end_n(train_fwd, y_train)
+        val_fwd, y_val = preprocessing.drop_start_end_n(val_fwd, y_val)
+        train_data = preprocessing.Data(train_fwd, y_train)
+        val_data = preprocessing.Data(val_fwd, y_val)
 
         # training
         _LOG.info("Creating model for training")
