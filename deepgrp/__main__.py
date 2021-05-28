@@ -10,6 +10,7 @@ import tensorflow as tf
 import deepgrp.prediction as dgpred
 import deepgrp.model as dgmodel
 import deepgrp.training as dgtrain
+import deepgrp.preprocessing as dgpreprocess
 from deepgrp import sequence as dgsequence  # pylint: disable=no-name-in-module
 
 logging.basicConfig()
@@ -312,12 +313,12 @@ class CommandLineParser:
 
         # get which chromosome is used for training and which for validation
         if args.trainfile[-10:] != '.fa.gz.npz' or \
-            args.validfile[-10:] != '.fa.gz.npz':
-                # train or valid file is not valid
-                sys.stderr.write('Training and validation file given must be ' +
+        args.validfile[-10:] != '.fa.gz.npz':
+            # train or valid file is not valid
+            sys.stderr.write('Training and validation file given must be ' +
                                 'in the format chr[chrnumber].fa.gz.npz, ' +
                                 'e.g. chr1.fa.gz.npz\n')
-                exit(1)
+            sys.exit(1)
         train_chr = os.path.basename(args.trainfile).split('.')[0]
         val_chr = os.path.basename(args.validfile).split('.')[0]
 
@@ -325,7 +326,7 @@ class CommandLineParser:
         if not os.path.isdir(logdir):
             # logdir is not valid
             sys.stderr.write('Given logdir is not a Directory\n')
-            exit(1)
+            sys.exit(1)
 
         # load data
         _LOG.info("Loading in all data necessary from %s, %s, %s",
@@ -335,18 +336,18 @@ class CommandLineParser:
 
         # preprocess
         ## preprocess y (bedfile)
-        y_train = preprocessing.preprocess_y(args.bedfile, train_chr,
+        y_train = dgpreprocess.preprocess_y(args.bedfile, train_chr,
                                     train_fwd.shape[1],
                                     parameter.repeats_to_search)
-        y_val = preprocessing.preprocess_y(args.bedfile, val_chr,
+        y_val = dgpreprocess.preprocess_y(args.bedfile, val_chr,
                                     val_fwd.shape[1],
                                     parameter.repeats_to_search)
 
         ## preprocess training and validation data
-        train_fwd, y_train = preprocessing.drop_start_end_n(train_fwd, y_train)
-        val_fwd, y_val = preprocessing.drop_start_end_n(val_fwd, y_val)
-        train_data = preprocessing.Data(train_fwd, y_train)
-        val_data = preprocessing.Data(val_fwd, y_val)
+        train_fwd, y_train = dgpreprocess.drop_start_end_n(train_fwd, y_train)
+        val_fwd, y_val = dgpreprocess.drop_start_end_n(val_fwd, y_val)
+        train_data = dgpreprocess.Data(train_fwd, y_train)
+        val_data = dgpreprocess.Data(val_fwd, y_val)
 
         # training
         _LOG.info("Creating model for training")
