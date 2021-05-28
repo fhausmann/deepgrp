@@ -45,6 +45,7 @@ jobs:
         poetry run pip check
         poetry run mypy deepgrp
         poetry run pylint deepgrp
+        poetry run yapf --recursive --diff deepgrp
 
 
   test:

@@ -27,7 +27,7 @@ def fetch_validation_batch(data: np.ndarray, step_size: int, batch_size: int,
     """
     data = data.T
 
-    def _fetch_data(): # pragma: no cover
+    def _fetch_data():  # pragma: no cover
         for index in range(0, data.shape[0] - vecsize, step_size):
             yield data[index:index + vecsize].astype('float32')
 
