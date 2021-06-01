@@ -14,8 +14,7 @@ from tensorflow import summary as tfsum
 from tensorflow.keras import backend as K  # pylint: disable=import-error
 
 from deepgrp.model import Options, create_logdir, create_model
-from deepgrp.prediction import (calculate_metrics, filter_segments,
-                                predict_complete)
+import deepgrp.prediction as dgpred
 from deepgrp.preprocessing import Data
 from deepgrp.training import training
 
@@ -56,16 +55,16 @@ def build_and_optimize(
         training((train_data, val_data), options, model, logdir,
                  extra_callback)
         K.clear_session()
-        predictions = predict_complete(step_size,
-                                       options,
-                                       logdir,
-                                       val_data,
-                                       use_mss=True)
+        predictions = dgpred.predict_complete(step_size,
+                                              options,
+                                              logdir,
+                                              val_data,
+                                              use_mss=True)
         K.clear_session()
         is_not_na = np.logical_not(np.isnan(predictions[:, 0]))
         predictions_class = predictions[is_not_na].argmax(axis=1)
-        filter_segments(predictions_class, options.min_mss_len)
-        _, metrics = calculate_metrics(
+        dgpred.filter_segments(predictions_class, options.min_mss_len)
+        _, metrics = dgpred.calculate_metrics(
             predictions_class, val_data.truelbl[:, is_not_na].argmax(axis=0))
         return metrics
 
@@ -91,8 +90,6 @@ def build_and_optimize(
         _LOGGER.exception("Error occurred while training")
         results["error"] = str(err)
         results["status"] = STATUS_FAIL
-        if results["logdir"]:
-            shutil.rmtree(results["logdir"])
     else:
         results["logdir"] = logdir
         results["loss"] = -1 * metrics['MCC']
@@ -104,7 +101,8 @@ def build_and_optimize(
             results["loss"] = np.inf
     finally:
         file_writer.close()
-
+    if results["status"] == STATUS_FAIL and results["logdir"]:
+        shutil.rmtree(results["logdir"])
     return results
 
 
