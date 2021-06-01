@@ -3,9 +3,9 @@
 import argparse
 import collections
 import re
-from typing import Dict, List, Pattern, Tuple, TextIO, Optional
+from typing import Dict, List, Pattern, Tuple, TextIO, Optional, Iterator
 
-_COMP_TBL: Dict[str, str] = str.maketrans({
+_COMP_TBL: Dict[int, str] = str.maketrans({
     'A': 'T',
     'T': 'A',
     'C': 'G',
@@ -95,13 +95,13 @@ def _get_repeat(line: str) -> Repeat:
     if match1:
         rep.ctg = match1.group(1)
         rep.start = int(match1.group(2)) - 1
-        rep.end = match1.group(3)
+        rep.end = int(match1.group(3))
         rep.rep = match1.group(4)
         rep.fam = match1.group(5)
     elif match2:
         rep.ctg = match2.group(2)
-        rep.start = match2.group(3)
-        rep.end = match2.group(4)
+        rep.start = int(match2.group(3))
+        rep.end = int(match2.group(4))
         rep.rep = match2.group(5)
         if match2.group(6) == match2.group(7):
             rep.fam = match2.group(6)
@@ -128,7 +128,7 @@ def _check_motifs(motif: str, motif_mut_hash: Dict[str, int],
 
 def read_repeatmasker(motif_hash: Dict[str, int], motif_mut_hash: Dict[str,
                                                                        int],
-                      filestream: TextIO) -> None:
+                      filestream: TextIO) -> Iterator[Repeat]:
     """Reads Repeatmasker output and prints to stdout.
 
     Args:
@@ -143,27 +143,31 @@ def read_repeatmasker(motif_hash: Dict[str, int], motif_mut_hash: Dict[str,
 
         if repeat.typ == 0 and repeat.fam in ("Simple_repeat", "Satellite"):
             motif = re.match(r"^\(([ACGT]+)\)n", repeat.rep)
-            if motif is not None:
-                motif = motif.group(1)
-                if motif in motif_hash:
+            if motif and motif.group(1) in motif_hash:
+                repeat.typ = _TYPES['HSATII']
+            elif motif and len(motif.group(1)) % len0 == 0:
+                count, count_mut = _check_motifs(motif.group(1),
+                                                 motif_mut_hash, motif_hash)
+                if count > 0 and (count + count_mut) * len0 == len(
+                        motif.group(1)):
                     repeat.typ = _TYPES['HSATII']
-                elif len(motif) % len0 == 0:
-                    count, count_mut = _check_motifs(motif, motif_mut_hash,
-                                                     motif_hash)
-                    if count > 0 and (count + count_mut) * len0 == len(motif):
-                        repeat.typ = _TYPES['HSATII']
         if repeat.ctg and repeat.typ > 0:
-            print(repeat)
+            yield repeat
 
 
 def main():
-    """ main function """
+    """Main function."""
     parser = argparse.ArgumentParser(
         description='Reads Repeatmasker output to bed file (not all repeats!!)'
     )
     parser.add_argument('file',
                         type=argparse.FileType('r'),
                         help='Repeatmasker output')
+    parser.add_argument("-o",
+                        '--outputfile',
+                        type=str,
+                        default=None,
+                        help='Output filename')
     args = parser.parse_args()
 
     motiflist = [_MOTIF0]
@@ -171,7 +175,15 @@ def main():
     motiflist += rotate(motiflist)
     motif_mut_hash = mutate(motiflist)
     motif_hash = {m: k for k, m in enumerate(motiflist)}
-    read_repeatmasker(motif_hash, motif_mut_hash, args.file)
+    motifs = read_repeatmasker(motif_hash, motif_mut_hash, args.file)
+    motifs = map(str, motifs)
+    if not args.outputfile:
+        for motif in motifs:
+            print(motif)
+        return
+    with open(args.outputfile, "w") as file:
+        for motif in motifs:
+            file.write(motif + "\n")
 
 
 if __name__ == '__main__':

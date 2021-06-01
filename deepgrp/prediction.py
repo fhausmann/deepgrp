@@ -5,12 +5,8 @@ from os import PathLike
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-# pytype: disable=import-error
-# pylint: disable=import-error
-from deepgrp.mss import find_mss_labels  # pylint: disable=no-name-in-module
-from deepgrp.sequence import get_max
-# pytype: enable=import-error
-# pylint: enable=import-error
+from deepgrp import mss
+from deepgrp import sequence as dgsequence
 from deepgrp.model import create_model, Options
 import deepgrp.preprocessing
 
@@ -31,7 +27,7 @@ def fetch_validation_batch(data: np.ndarray, step_size: int, batch_size: int,
     """
     data = data.T
 
-    def _fetch_data():
+    def _fetch_data():  # pragma: no cover
         for index in range(0, data.shape[0] - vecsize, step_size):
             yield data[index:index + vecsize].astype('float32')
 
@@ -59,8 +55,8 @@ def apply_mss(probs: np.ndarray, options: Options) -> np.ndarray:
     t_scores = np.log(mins / (1 - mins))
     scores = np.where(results_classes > 0, t_scores,
                       -10 * t_scores).astype(float)
-    return find_mss_labels(scores, results_classes, nof_labels,
-                           options.min_mss_len, options.xdrop_len)
+    return mss.find_mss_labels(scores, results_classes, nof_labels,
+                               options.min_mss_len, options.xdrop_len)
 
 
 def softmax(array: np.ndarray) -> np.ndarray:
@@ -106,10 +102,9 @@ def predict(model: keras.Model, data: tf.data.Dataset,
     """
     predictions = np.zeros(results_shape, dtype=np.float32)
     for i, batch in enumerate(data):
-        vecsize = batch.shape[1]
         index = (i * batch.shape[0] * step_size)
         probas = model.predict_on_batch(batch)
-        get_max(predictions[index:], probas.numpy(), step_size)
+        dgsequence.get_max(predictions[index:], probas.numpy(), step_size)
     return predictions
 
 
