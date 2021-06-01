@@ -1,20 +1,25 @@
 """deepgrp.optimization modul for optimisation with hyperopt"""
 
-from typing import Any, Dict, Callable, Union
+import logging
 import pickle
-from os import path, PathLike
 import shutil
+from os import PathLike, path
+from typing import Any, Callable, Dict, Union
+
 import numpy as np
-from hyperopt import fmin, tpe, Trials, STATUS_OK, STATUS_FAIL
-from tensorboard.plugins.hparams import api as hp
 import tensorflow as tf
+from hyperopt import STATUS_FAIL, STATUS_OK, Trials, fmin, tpe
+from tensorboard.plugins.hparams import api as hp
 from tensorflow import summary as tfsum
 from tensorflow.keras import backend as K  # pylint: disable=import-error
+
+from deepgrp.model import Options, create_logdir, create_model
+from deepgrp.prediction import (calculate_metrics, filter_segments,
+                                predict_complete)
 from deepgrp.preprocessing import Data
-from deepgrp.model import create_model, create_logdir, Options
 from deepgrp.training import training
-from deepgrp.prediction import predict_complete, filter_segments
-from deepgrp.prediction import calculate_metrics
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _update_options(options: Options, dictionary: Dict[str, Any]) -> Options:
@@ -82,7 +87,13 @@ def build_and_optimize(
                      metrics['MCC'],
                      step=0,
                      description="Matthews correlation coefficient")
-        file_writer.close()
+    except Exception as err:  # pylint: disable=broad-except
+        _LOGGER.exception("Error occurred while training")
+        results["error"] = str(err)
+        results["status"] = STATUS_FAIL
+        if results["logdir"]:
+            shutil.rmtree(results["logdir"])
+    else:
         results["logdir"] = logdir
         results["loss"] = -1 * metrics['MCC']
 
@@ -91,12 +102,9 @@ def build_and_optimize(
         if np.isnan(results["loss"]):
             results["status"] = STATUS_FAIL
             results["loss"] = np.inf
-    except Exception as err:  # pylint: disable=broad-except
-        print(err)
-        results["error"] = str(err)
-        results["status"] = STATUS_FAIL
-        if results["logdir"]:
-            shutil.rmtree(results["logdir"])
+    finally:
+        file_writer.close()
+
     return results
 
 
@@ -121,19 +129,20 @@ def run_a_trial(space: Dict[str, Any], objective: Callable[[Dict[str, Any]],
     """
     nb_evals = max_evals
 
-    print("Attempt to resume a past training if it exists:")
+    _LOGGER.info("Attempt to resume a past training if it exists:")
     results_path = path.join(project_root_dir, "results.pkl")
 
     try:
         with open(results_path, "rb") as file:
             trials = pickle.load(file)
-        print("Found saved Trials! Loading...")
-        max_evals = len(trials.trials) + nb_evals
-        print("Rerunning from {} trials to add another one.".format(
-            len(trials.trials)))
     except FileNotFoundError:
         trials = Trials()
-        print("Starting from scratch: new trials.")
+        _LOGGER.info("Starting from scratch: new trials.")
+    else:
+        _LOGGER.warning("Found saved Trials! Loading...")
+        max_evals = len(trials.trials) + nb_evals
+        _LOGGER.info("Rerunning from %d trials to add another one.",
+                     len(trials.trials))
 
     fmin(objective,
          space,
