@@ -316,8 +316,8 @@ class CommandLineParser:
         args.validfile[-10:] != '.fa.gz.npz':
             # train or valid file is not valid
             sys.stderr.write('Training and validation file given must be ' +
-                                'in the format chr[chrnumber].fa.gz.npz, ' +
-                                'e.g. chr1.fa.gz.npz\n')
+                             'in the format chr[chrnumber].fa.gz.npz, ' +
+                             'e.g. chr1.fa.gz.npz\n')
             sys.exit(1)
         train_chr = os.path.basename(args.trainfile).split('.')[0]
         val_chr = os.path.basename(args.validfile).split('.')[0]
@@ -337,11 +337,11 @@ class CommandLineParser:
         # preprocess
         ## preprocess y (bedfile)
         y_train = dgpreprocess.preprocess_y(args.bedfile, train_chr,
-                                    train_fwd.shape[1],
-                                    parameter.repeats_to_search)
+                                            train_fwd.shape[1],
+                                            parameter.repeats_to_search)
         y_val = dgpreprocess.preprocess_y(args.bedfile, val_chr,
-                                    val_fwd.shape[1],
-                                    parameter.repeats_to_search)
+                                          val_fwd.shape[1],
+                                          parameter.repeats_to_search)
 
         ## preprocess training and validation data
         train_fwd, y_train = dgpreprocess.drop_start_end_n(train_fwd, y_train)
