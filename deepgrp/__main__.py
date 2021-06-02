@@ -11,7 +11,7 @@ import deepgrp.prediction as dgpred
 import deepgrp.model as dgmodel
 import deepgrp.training as dgtrain
 import deepgrp.preprocessing as dgpreprocess
-from deepgrp import sequence as dgsequence  # pylint: disable=no-name-in-module
+from deepgrp import sequence as dgsequence
 
 logging.basicConfig()
 _LOG = logging.getLogger(__name__)

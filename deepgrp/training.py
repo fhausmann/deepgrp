@@ -1,13 +1,13 @@
 """deepgrp.training modul for training"""
 
-from typing import Callable, Iterator, Tuple, List, Optional
-from os import path, PathLike
+from os import PathLike, path
+from typing import Callable, Iterator, List, Optional, Tuple
+
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-# pylint: disable=import-error
 import tensorflow.keras.callbacks as kc
-# pylint: enable=import-error
+from tensorflow import keras
+
 from deepgrp import preprocessing
 from deepgrp.model import Options
 
