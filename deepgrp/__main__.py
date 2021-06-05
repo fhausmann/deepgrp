@@ -312,13 +312,6 @@ class CommandLineParser:
         logdir = args.logdir
 
         # get which chromosome is used for training and which for validation
-        if args.trainfile[-10:] != '.fa.gz.npz' or \
-        args.validfile[-10:] != '.fa.gz.npz':
-            # train or valid file is not valid
-            sys.stderr.write('Training and validation file given must be ' +
-                             'in the format chr[chrnumber].fa.gz.npz, ' +
-                             'e.g. chr1.fa.gz.npz\n')
-            sys.exit(1)
         train_chr = os.path.basename(args.trainfile).split('.')[0]
         val_chr = os.path.basename(args.validfile).split('.')[0]
 
@@ -332,7 +325,7 @@ class CommandLineParser:
         _LOG.info("Loading in all data necessary from %s, %s, %s",
                   args.trainfile, args.validfile, args.bedfile)
         train_fwd = np.load(args.trainfile, allow_pickle=False)['fwd']
-        val_fwd = np.load(args.valdata, allow_pickle=False)['fwd']
+        val_fwd = np.load(args.validfile, allow_pickle=False)['fwd']
 
         # preprocess
         ## preprocess y (bedfile)
