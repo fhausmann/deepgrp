@@ -104,7 +104,7 @@ def predict(model: keras.Model, data: tf.data.Dataset,
     for i, batch in enumerate(data):
         index = (i * batch.shape[0] * step_size)
         probas = model.predict_on_batch(batch)
-        dgsequence.get_max(predictions[index:], probas.numpy(), step_size)
+        dgsequence.get_max(predictions[index:], probas, step_size)
     return predictions
 
 
