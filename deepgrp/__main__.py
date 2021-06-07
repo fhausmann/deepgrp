@@ -317,10 +317,7 @@ class CommandLineParser:
 
         # check if logdir exists?
         if not os.path.isdir(logdir):
-            # logdir is not valid
-            logdir = os.path.join(os.getcwd(), 'logdir')
-            if not os.path.isdir(logdir):
-                os.mkdir(logdir)
+            os.mkdir(logdir)
 
         # load data
         _LOG.info("Loading in all data necessary from %s, %s, %s",
