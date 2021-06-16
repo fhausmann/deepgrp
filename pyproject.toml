@@ -59,7 +59,7 @@ testpaths = [
 legacy_tox_ini = """
 [tox]
 isolated_build = true
-envlist =  py36-tf21,py37-{tf21,tf22,tf23,tf24},py38-{tf23,tf24,tf25}
+envlist =  py37-{tf21,tf22,tf23,tf24,tf25}
 
 
 [testenv]
@@ -72,13 +72,11 @@ deps =
     freezegun
     pycm
     poetry
-    py36-tf21:    tensorflow>=2.1.0,<2.2.0
     py37-tf21:    tensorflow>=2.1.0,<2.2.0
     py37-tf22:    tensorflow>=2.2.0,<2.3.0
     py37-tf23:    tensorflow>=2.3.0,<2.4.0
     py37-tf24:    tensorflow>=2.4.0,<2.5.0
-    py38-tf24:    tensorflow>=2.4.0,<2.5.0
-    py38-tf25:    tensorflow>=2.5.0,<2.6.0
+    py37-tf25:    tensorflow>=2.5.0,<2.6.0
 
 commands =
     python -c "import tensorflow; print(tensorflow.__version__)"
