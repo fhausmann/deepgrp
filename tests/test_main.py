@@ -42,6 +42,7 @@ class TestCommandLineParser:
     def test_predict(self):
         raise NotImplementedError()
 
+    @pytest.mark.xfail()
     def test_train(self, monkeypatch, tmpdir, cmd_class_train):
         # helper functions
         def get_toml_dummy(file):
