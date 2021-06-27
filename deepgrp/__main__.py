@@ -218,7 +218,7 @@ class CommandLineParser:
         self.args = args
         return self
 
-    def setup_tensorflow(self) -> "CommandLineParser": # pragma: no cover
+    def setup_tensorflow(self) -> "CommandLineParser":  # pragma: no cover
         """Set TensorFlow threads and XLA."""
         if self.threads > 0:
             inter_op_threads = max(1, self.threads // 2)
@@ -232,7 +232,7 @@ class CommandLineParser:
             tf.config.optimizer.set_jit(True)
         return self
 
-    def set_logging(self) -> "CommandLineParser": # pragma: no cover
+    def set_logging(self) -> "CommandLineParser":  # pragma: no cover
         """Setup logging."""
         loglevels = [logging.WARNING, logging.INFO, logging.DEBUG]
         loglevel = loglevels[min(len(loglevels) - 1, self.verbose)]
@@ -351,10 +351,10 @@ class CommandLineParser:
         model.save(args.modelfile)
 
 
-def main(): # pragma: no cover
+def main():  # pragma: no cover
     """ Main function """
     CommandLineParser().parse_args().set_logging().setup_tensorflow().run()
 
 
-if __name__ == "__main__": # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()
