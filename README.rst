@@ -77,7 +77,13 @@ Hyperparameter optimization is based on the `hyperopt`__ package.
 Training
 --------
 
-Training of a model can be performed with the provided jupyter `notebook`__.
+Training of a model can be performed with::
+
+    deepgrp train <parameter.toml> <TRAIN>.fa.gz.npz <VALIDATION>.fa.gz.npz <annotations.bed>
+
+The prefix of `<TRAIN>` and `<VALIDATION>` should be as row identifier in the first column of `<annotations.bed>`.
+
+For more fine-grained control of the training process you can also use the provided jupyter `notebook`__.
 
 .. __: https://github.com/fhausmann/deepgrp/blob/master/notebooks/Training.ipynb
 
