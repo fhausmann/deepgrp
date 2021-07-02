@@ -73,15 +73,17 @@ def test_softmax():
 
 @pytest.mark.parametrize("step_size", (1, 2))
 def test_predict(step_size):
-    class _Model:
-        # pylint: disable=too-few-public-methods
-        def predict_on_batch(self, _):
-            tmp = np.zeros((4, 10, 3))
-            tmp[:, 0, 1] = 1
-            return tf.convert_to_tensor(tmp, dtype=tf.float32)
+
+    tmp = np.zeros((4, 10, 3))
+    tmp[:, 0, 1] = 1
+    output = tf.keras.layers.Lambda(
+        lambda x: tf.constant(tmp, dtype=tf.float32))
+    inputs = tf.keras.Input((10, 5))
+
+    model = tf.keras.Model(inputs=inputs, outputs=output(inputs))
 
     testdata = (np.random.rand(4, 10, 5) for _ in range(3))
-    got = dgpredict.predict(model=_Model(),
+    got = dgpredict.predict(model=model,
                             data=testdata,
                             results_shape=(50, 3),
                             step_size=step_size)
