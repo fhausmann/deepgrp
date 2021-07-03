@@ -5,7 +5,7 @@ from typing import Callable, Iterator, List, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.callbacks as kc
+import tensorflow.keras.callbacks as kc #pylint: disable=no-name-in-module
 from tensorflow import keras
 
 from deepgrp import preprocessing
