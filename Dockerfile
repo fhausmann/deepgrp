@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.1.0-gpu-py3 as base
+FROM tensorflow/tensorflow:2.5.0-gpu-py3 as base
 
 ENV LC_ALL C.UTF-8
 ENV TZ=Europe/Berlin
