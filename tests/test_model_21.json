@@ -64,21 +64,18 @@
                         "class_name": "GlorotUniform",
                         "config": {
                             "seed": null
-                        },
-                        "shared_object_id": 2
+                        }
                     },
                     "recurrent_initializer": {
                         "class_name": "Orthogonal",
                         "config": {
                             "gain": 1.0,
                             "seed": null
-                        },
-                        "shared_object_id": 3
+                        }
                     },
                     "bias_initializer": {
                         "class_name": "Zeros",
-                        "config": {},
-                        "shared_object_id": 4
+                        "config": {}
                     },
                     "unit_forget_bias": true,
                     "kernel_regularizer": null,
@@ -275,22 +272,18 @@
                         "class_name": "GlorotUniform",
                         "config": {
                             "seed": null
-                        },
-                        "shared_object_id": 2
+                        }
                     },
                     "recurrent_initializer": {
                         "class_name": "Orthogonal",
                         "config": {
                             "gain": 1.0,
                             "seed": null
-                        },
-                        "shared_object_id": 3
+                        }
                     },
                     "bias_initializer": {
                         "class_name": "Zeros",
-                        "config": {},
-                        "shared_object_id": 4
-
+                        "config": {}
                     },
                     "kernel_regularizer": null,
                     "recurrent_regularizer": null,
@@ -408,9 +401,7 @@
                     "trainable": true,
                     "dtype": "float32",
                     "causal": false,
-                    "use_scale": true,
-                    "dropout": 0.0
-
+                    "use_scale": true
                 },
                 "name": "additive_attention",
                 "inbound_nodes": [
