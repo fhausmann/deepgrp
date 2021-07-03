@@ -2,6 +2,7 @@
 #pylint: disable=no-self-use, missing-function-docstring, missing-class-docstring
 import json
 import pathlib
+import os
 
 import numpy as np
 import pytest
@@ -208,8 +209,9 @@ class TestReverseComplementLayer(keras_parameterized.TestCase):
         self.assertEqual(output.shape.as_list(), [None, 6, 5])
         testmodel = tf.keras.models.Model(inputs, output)
         testmodel.run_eagerly = testing_utils.should_run_eagerly()
-        should = testing_utils.should_run_tf_function()
-        testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
+        if int(tf.__version__.split(".")[1]) < 3:
+            should = testing_utils.should_run_tf_function()
+            testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
         input_data = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0,
                                                  0], [0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 0], [0, 0, 0, 0, 1],
@@ -235,8 +237,9 @@ class TestReverseComplementLayer(keras_parameterized.TestCase):
         self.assertEqual(output.shape.as_list(), [None, 6, 5])
         testmodel = tf.keras.models.Model(inputs, output)
         testmodel.run_eagerly = testing_utils.should_run_eagerly()
-        should = testing_utils.should_run_tf_function()
-        testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
+        if int(tf.__version__.split(".")[1]) < 3:
+            should = testing_utils.should_run_tf_function()
+            testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
         input_data = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0,
                                                  0], [0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 0], [0, 0, 0, 0, 1],
@@ -247,12 +250,17 @@ class TestReverseComplementLayer(keras_parameterized.TestCase):
         output = recovered_model.predict(input_data)
         self.assertAllClose(output, expect)
 
-
 @pytest.mark.parametrize("rnn", ("GRU", "LSTM"))
 def test_create_model(rnn):
     got = model.create_model(model.Options(attention=True,
                                            rnn=rnn)).get_config()
     got = json.loads(json.dumps(got))
-    with pathlib.Path(__file__).with_suffix('.json').open('r') as file:
+    tfversion = "{}{}".format(tf.__version__.split(".")[0],
+                              tf.__version__.split(".")[1])
+    jsonfile = pathlib.Path(__file__)
+    jsonfile = os.path.splitext(jsonfile)[0]
+    jsonfile += tfversion
+    jsonfile += ".json"
+    with open(jsonfile, 'r') as file:
         expected = json.load(file)[rnn]
     assert got == expected
