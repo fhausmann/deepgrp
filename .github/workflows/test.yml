@@ -81,3 +81,20 @@ jobs:
       run: |
         source "$HOME/.poetry/env"
         poetry run pytest --cov-report=xml
+
+  multiversiontest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [3.7]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Run Tox
+        run: tox
