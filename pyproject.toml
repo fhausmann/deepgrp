@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "deepgrp"
-version = "0.2.2"
+version = "0.2.3"
 description = "DNA repeat annotations"
 authors = ["Fabian Hausmann <fabian.hausmann@zmnh.uni-hamburg.de>", "Stefan Kurtz <kurtz@zbh.uni-hamburg.de>"]
 license= "Apache-2.0"
