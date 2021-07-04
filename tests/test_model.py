@@ -8,6 +8,7 @@ import pytest
 import tensorflow as tf
 import toml
 from freezegun import freeze_time
+from packaging import version
 # pylint: disable=no-name-in-module
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.keras import keras_parameterized, testing_utils
@@ -208,8 +209,9 @@ class TestReverseComplementLayer(keras_parameterized.TestCase):
         self.assertEqual(output.shape.as_list(), [None, 6, 5])
         testmodel = tf.keras.models.Model(inputs, output)
         testmodel.run_eagerly = testing_utils.should_run_eagerly()
-        should = testing_utils.should_run_tf_function()
-        testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
+        if version.parse(tf.__version__) < version.parse("2.3.0"):
+            should = testing_utils.should_run_tf_function()
+            testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
         input_data = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0,
                                                  0], [0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 0], [0, 0, 0, 0, 1],
@@ -235,8 +237,9 @@ class TestReverseComplementLayer(keras_parameterized.TestCase):
         self.assertEqual(output.shape.as_list(), [None, 6, 5])
         testmodel = tf.keras.models.Model(inputs, output)
         testmodel.run_eagerly = testing_utils.should_run_eagerly()
-        should = testing_utils.should_run_tf_function()
-        testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
+        if version.parse(tf.__version__) < version.parse("2.3.0"):
+            should = testing_utils.should_run_tf_function()
+            testmodel._experimental_run_tf_function = should  # pylint: disable=protected-access
         input_data = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0,
                                                  0], [0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 0], [0, 0, 0, 0, 1],
@@ -253,6 +256,7 @@ def test_create_model(rnn):
     got = model.create_model(model.Options(attention=True,
                                            rnn=rnn)).get_config()
     got = json.loads(json.dumps(got))
+    tfversion = version.parse(tf.__version__)
     with pathlib.Path(__file__).with_suffix('.json').open('r') as file:
-        expected = json.load(file)[rnn]
-    assert got == expected
+        expected = json.load(file)[f"{tfversion.major}.{tfversion.minor}"]
+    assert got == expected[rnn]
