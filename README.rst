@@ -131,7 +131,28 @@ Feel free to ask in case of any questions.
 
 Further information
 ===================
+DeepGRP is published `here`__ . If you use DeepGRP please cite:
+
+.. __: https://link.springer.com/article/10.1186/s13015-021-00199-0
+
+   @Article{Hausmann2021,
+      author={Hausmann, Fabian and Kurtz, Stefan},
+      title={DeepGRP: engineering a software tool for predicting genomic repetitive elements using Recurrent Neural Networks with attention},
+      journal={Algorithms for Molecular Biology},
+      year={2021},
+      month={Aug},
+      day={23},
+      volume={16},
+      number={1},
+      pages={20},
+      issn={1748-7188},
+      doi={10.1186/s13015-021-00199-0},
+      url={https://doi.org/10.1186/s13015-021-00199-0}
+   }
+
+
+
 You can find material to reproduce
-the results in the repository `deepgrp_reproducibility`__.
+the results from the paper in the repository `deepgrp_reproducibility`__.
 
 .. __: https://github.com/fhausmann/deepgrp_reproducibility
